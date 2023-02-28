@@ -1,0 +1,21 @@
+---
+title: "Intro to RMarkdown"
+author: "Halina Do-Linh"
+date: "2023-02-27"
+output: html_document
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Some *italicized text*.
+
+Some **bold text**.
+
+A very important fact[@oke2020]
+
+```{r}
+x <-  4*3
+```
