@@ -1,0 +1,167 @@
+---
+title: "Data Cleaning & Manipulation"
+author: "Halina Do-Linh"
+date: "2023-03-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(readr)
+```
+
+## Load data
+
+```{r}
+catch_original <- read.csv("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.302.1")
+```
+
+## Clean data
+
+`select()` from `dplyr` package selects **columns**.
+
+```{r select cols}
+# remove all notesRegCode columns from the catch_original data frame
+catch_data <- catch_original %>% 
+  select(-All, -notesRegCode)
+```
+
+By exploring the data we see that some variables have classes we do not expect.
+
+```{r explore data}
+# shows first 6 rows of df
+head(catch_data)
+
+# same as head but different view
+glimpse(catch_data)
+```
+This warning tells us that somewhere in the dataset, the `Chinook` col has a character or a `NA` value when it should have a number
+
+Show in New Window
+Warning: There was 1 warning in `mutate()`.
+ℹ In argument: `Chinook = as.numeric(Chinook)`.
+Caused by warning:
+! NAs introduced by coercion
+
+```{r change class}
+catch_clean <- catch_data %>% 
+  mutate(Chinook = as.numeric(Chinook))
+```
+This tells me that my `NA` value is located at row 401.
+
+```{r find NA}
+i <- which(is.na(catch_clean$Chinook))
+
+# I is not a 1!
+catch_data[i,]
+```
+
+```{r convert "I" to 1}
+# note we are assuming that the "I" is a typo vs a coded missing value, etc
+# always check the metadata
+catch_clean <- catch_data %>% 
+  mutate(Chinook = if_else(Chinook == "I", "1", Chinook)) %>% 
+  mutate(Chinook = as.integer(Chinook))
+
+glimpse(catch_clean)
+```
+
+## Halina Notes
+- `pivot_longer()` the `names_to` arg is taking all the names of the columns and turning it into a new column where the names turn into the values for that new col you're creating. The `values_to` arg is taking all the values in from those original columns are placed into a new col that we've named in `values_to`.
+
+```{r pivot longer}
+catch_long <- catch_clean %>% 
+  pivot_longer(cols = -c(Region, Year),
+               names_to = "species",
+               values_to = "catch")
+```
+
+```{r pivot wider}
+catch_wide <- catch_long %>% 
+  pivot_wider(names_from = species,
+              values_from = catch)
+```
+
+## Practice renaming columns
+
+```{r}
+catch_long <- catch_long %>% 
+  rename(catch_thousands = catch)
+```
+
+## Add columns with `mutate()`
+
+```{r change catch metric}
+catch_long <- catch_long %>% 
+  mutate(catch = catch_thousands * 1000)
+
+# remove `catch_thousands`
+catch_long <- catch_long %>% 
+  select(-catch_thousands)
+```
+ 
+## Pratice using `group_by()` and `summarize()`
+
+```{r mean counts by region}
+mean_region <- catch_long %>% 
+  group_by(Region) %>% 
+  summarize(catch_mean = mean(catch))
+```
+
+```{r number of obs by region}
+n_region <- catch_long %>% 
+  group_by(Region) %>% 
+  summarize(n = n(), # number of rows of each group
+            total_catch = sum(catch)) 
+```
+
+## Filtering
+
+`filter()` from `dplyr` package filters **rows**.
+
+```{r}
+ALU_catch <- catch_long %>%
+  # multiple regions
+  # use %in% over == because == will be looking for the pattern ALU (first) SSE (second)
+  # filter(Region %in% c("ALU", "SSE")) %>% 
+  filter(Region == "ALU")
+
+```
+
+## Arrange some rows
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
