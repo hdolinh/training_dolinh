@@ -12,6 +12,6 @@ knitr::opts_chunk$set(echo = TRUE)
 # Analysis Plan
 
 - Introduction
-- Data cleaning(data-cleaning-manipulation-practice.html)
+- [Data cleaning](data-cleaning-manipulation-practice.html)
 - Gap filling
 - Linear models
