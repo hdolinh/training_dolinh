@@ -1,0 +1,108 @@
+---
+title: "Data Visualization"
+author: "Halina Do-Linh"
+date: "2023-03-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Libraries
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(scales)
+library(leaflet)
+library(DT)
+library(tidyverse)
+```
+
+## Read Data
+
+```{r}
+data_url <- "https://knb.ecoinformatics.org/knb/d1/mn/v2/object/urn%3Auuid%3Af119a05b-bbe7-4aea-93c6-85434dcb1c5e"
+
+esc <- tryCatch(
+    read.csv("data/escapement.csv"),
+    error=function(cond) {
+        message(paste("Escapement file does not seem to exist, so get it from the KNB."))
+        esc <- read.csv(url(data_url, method = "libcurl"))
+        return(esc)
+    }
+)
+
+head(esc)
+```
+
+## Challenge: Calculate Annual Escapement by species and region
+
+```{r}
+annual_esc <- esc %>% 
+  separate(sampleDate, c("Year", "Month", "Day"), sep = "-") %>% 
+  mutate(Year = as.numeric(Year)) %>% 
+  group_by(Species, SASAP.Region, Year) %>% 
+  summarize(escapement = sum(DailyCount)) %>% 
+  filter(Species %in% c("Chinook", "Sockeye", "Chum", "Coho", "Pink"))
+```
+
+## Plot Static Figures
+
+Basic `ggplot` figure
+
+```{r}
+pink_exp <- annual_esc %>% 
+  filter(Species == "Pink")
+
+plot <- ggplot(annual_esc, aes(x = Species, y = escapement,
+                       fill = SASAP.Region)) +
+  geom_col() +
+  facet_wrap(~SASAP.Region, nrow = 2)
+
+plot
+```
+
+## `ggplot` and ` %>% `
+
+Annual escapement from Kodiak by species
+
+```{r}
+annual_esc %>% 
+  filter(SASAP.Region == "Kodiak") %>% 
+  ggplot(aes(x = Year,
+             y = escapement,
+             color = Species)) +
+  geom_line() +
+  geom_point() +
+  theme_light()
+```
+
+## Customize plot using `theme`
+
+```{r}
+kodiak_esc <- annual_esc %>% 
+  filter(SASAP.Region == "Kodiak")
+```
+
+```{r}
+ggplot(annual_esc, 
+       aes(x = Year,
+           y = escapement,
+           fill = SASAP.Region)) +
+  geom_col() +
+  scale_y_continuous(labels = comma) +
+  facet_wrap( ~Species, scales = "free_y", ncol = 2) +
+  labs(y = "Escapement",
+       x = NULL,
+       fill = NULL) +
+  theme(legend.position = "bottom") +
+  scale_fill_discrete(labels = function(x) str_wrap(x, width = 18)) +
+  guides(fill = guide_legend(nrow = 1))
+```
+
+
+
+
