@@ -98,7 +98,9 @@ ggplot(annual_esc,
   labs(y = "Escapement",
        x = NULL,
        fill = NULL) +
-  theme(legend.position = "bottom") +
+  theme(legend.position = "bottom",
+        legend.key.size = unit(1, "cm")
+        ) +
   scale_fill_discrete(labels = function(x) str_wrap(x, width = 18)) +
   guides(fill = guide_legend(nrow = 1))
 ```
