@@ -9,7 +9,13 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
 ```{r}
+source("spp-code-function.R")
+```
+
+
+```{r load libraries}
 library(rvest)
 library(readr)
 library(dplyr)
@@ -17,14 +23,7 @@ library(janitor)
 ```
 
 
-## Load data
-
-```{r adc data}
-utqiagvik_nest_dat <- read_csv("data/Utqiagvik_nest_data.csv")
-
-utqiagvik_pred_dat <- read_csv("data/Utqiagvik_predator_surveys.csv")
-```
-
+## Scraping bird code species name
 
 ```{r spp tbl}
 webpage <- read_html("https://www.pwrc.usgs.gov/bbl/manual/speclist.cfm")
@@ -38,4 +37,56 @@ species <- tbls[[1]] %>%
     mutate(alpha_code = tolower(alpha_code))
 ```
 
+
+## Load data
+
+```{r adc data}
+utqiagvik_nest_dat <- read_csv("data/Utqiagvik_nest_data.csv")
+
+utqiagvik_pred_dat <- read_csv("data/Utqiagvik_predator_surveys.csv")
+```
+
+
+## use `ssp-code-function()`
+
+```{r}
+pred_species <- assign_species_name(utqiagvik_pred_dat, species) %>% 
+    group_by(year, common_name) %>% 
+    summarise(pred_count = sum(count, na.rm = T), .groups = "drop") %>% 
+    filter(!is.na(common_name))
+```
+
+## question 2
+
+
+```{r}
+nests_species <- assign_species_name(utqiagvik_nest_dat, species) %>% 
+  group_by(common_name, year) %>% 
+  summarise(total_predated = sum(number_eggs_predated, na.rm = T),
+            .groups = "drop") %>% 
+  filter(!is.na(common_name))
+```
+
+
+```{r}
+pred_total <- pred_species %>% 
+    group_by(year) %>% 
+    summarise(pred_count = sum(pred_count, na.rm = T), .groups = "drop")
+```
+
+
+```{r}
+# num of predators by yr is in df pred_species
+
+# assign spp name function
+eggs_pred_common_names <- assign_species_name(utqiagvik_nest_dat, species)
+
+# eggs pred df
+eggs_pred <- eggs_pred_common_names %>% 
+  group_by(year, common_name) %>% 
+  summarize(egg_pred_count = sum(number_eggs_predated, na.rm = T))
+
+# join pred_species with eggs_pred
+eggs_pred_spp_specific <- left_join(eggs_pred, pred_species, by = c("year", "common_name"))
+```
 
